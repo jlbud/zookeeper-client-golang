@@ -10,6 +10,7 @@ type ServiceNode struct {
 	Name string `json:"name"` // 服务名称
 	Host string `json:"host"`
 	Port int    `json:"port"`
+	Url  string `json:"url"`
 }
 
 // 在定义一个服务发现的客户端结构体SdClient
@@ -119,4 +120,43 @@ func (s *SdClient) GetNodes(name string) ([]*ServiceNode, error) {
 		nodes = append(nodes, node)
 	}
 	return nodes, nil
+}
+
+func (s *SdClient) GetChildren(name string) ([]string, error) {
+	path := s.zkRoot + "/" + name
+	// 获取字节点名称 [_c_9ca18b1c5c821874d7241eaeef76f105-n0000000007,_c_9ca18b1c5c821874d7241eaeef76f105-n0000000008]
+	children, _, err := s.conn.Children(path)
+	if err != nil {
+		if err == zk.ErrNoNode {
+			return make([]string, 0), nil
+		}
+		return nil, err
+	}
+	return children, nil
+}
+
+func (s *SdClient) Delete(name string) error {
+	path := s.zkRoot + "/" + name
+	_, sate, err := s.conn.Get(path)
+	if err != nil {
+		return err
+	}
+	err = s.conn.Delete(path, sate.Version)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 删改与增不同在于其函数中的version参数,其中version是用于 CAS支持
+// 可以通过此种方式保证原子性
+// 改
+func (s *SdClient) Modify(childPath string, newData []byte) error {
+	path := s.zkRoot + "/" + childPath
+	_, sate, _ := s.conn.Get(path)
+	_, err := s.conn.Set(path, newData, sate.Version)
+	if err != nil {
+		return err
+	}
+	return nil
 }
