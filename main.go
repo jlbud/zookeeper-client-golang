@@ -8,8 +8,8 @@ import (
 func main() {
 	// 先安转zookeeper
 	// 服务器地址列表
-	servers := []string{"192.168.5.216:2181"} // 192.168.5.216
-	client, err := client2.NewClient(servers, "/api", 10)
+	servers := []string{"192.168.5.216:2181"}
+	client, err := client2.NewClient(servers, "/cloud", 10)
 	if err != nil {
 		panic(err)
 	}
