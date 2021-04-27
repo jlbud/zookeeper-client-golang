@@ -2,14 +2,27 @@ package main
 
 import (
 	"fmt"
+	"github.com/samuel/go-zookeeper/zk"
 	client2 "zookeeper/client"
 )
+
+func callback(event zk.Event) {
+
+}
 
 func main() {
 	// 先安转zookeeper
 	// 服务器地址列表
 	servers := []string{"192.168.5.216:2181"}
-	client, err := client2.NewClient(servers, "/api", 10)
+
+	client, err := client2.NewClient(servers, "/api", 10, func(event zk.Event) {
+		// zk.EventNodeCreated
+		// zk.EventNodeDeleted
+		fmt.Println("path: ", event.Path)
+		fmt.Println("type: ", event.Type.String())
+		fmt.Println("state: ", event.State.String())
+		fmt.Println("---------------------------")
+	})
 	if err != nil {
 		panic(err)
 	}

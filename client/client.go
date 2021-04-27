@@ -21,12 +21,15 @@ type SdClient struct {
 }
 
 //编写构造器，创建根节点
-func NewClient(zkServers []string, zkRoot string, timeout int) (*SdClient, error) {
+func NewClient(zkServers []string, zkRoot string, timeout int, callback func(event zk.Event)) (*SdClient, error) {
 	client := new(SdClient)
 	client.zkServers = zkServers
 	client.zkRoot = zkRoot
+
+	// register a event callback
+	eventCallbackOption := zk.WithEventCallback(callback)
 	// 连接服务器
-	conn, _, err := zk.Connect(zkServers, time.Duration(timeout)*time.Second)
+	conn, _, err := zk.Connect(zkServers, time.Duration(timeout)*time.Second, eventCallbackOption)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +48,8 @@ func (s *SdClient) Close() {
 }
 
 func (s *SdClient) ensureRoot() error {
-	exists, _, err := s.conn.Exists(s.zkRoot)
+	// TODO can update watch path by business
+	exists, _, _, err := s.conn.ExistsW(s.zkRoot)
 	if err != nil {
 		return err
 	}
